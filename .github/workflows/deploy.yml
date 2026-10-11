@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency: deploy
+
+jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  deploy:
+    needs: test
+    runs-on: [self-hosted, speech-service]
+    steps:
+      - name: Pull and rebuild on the Pi
+        working-directory: /home/apps/speech-service
+        run: |
+          git fetch origin master
+          git reset --hard "$GITHUB_SHA"   # exactly the commit that was tested; .env is gitignored and untracked, so it is left untouched
+          docker compose up -d --build
+          # Wait for the model to load and /health to answer
+          for i in $(seq 1 30); do
+            if docker compose exec -T speech python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"; then
+              echo "speech is healthy"; exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs --tail 50 speech
+          exit 1
