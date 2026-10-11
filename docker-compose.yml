@@ -1,0 +1,23 @@
+services:
+  speech:
+    build:
+      context: .
+      args:
+        # Vosk model to bake into the image (https://alphacephei.com/vosk/models)
+        VOSK_MODEL: ${VOSK_MODEL:-vosk-model-small-en-us-0.15}
+    # Other containers on shared-network reach it at http://speech:8000
+    container_name: speech
+    restart: unless-stopped
+    environment:
+      # Optional: require "Authorization: Bearer <API_TOKEN>" on /transcribe
+      API_TOKEN: ${API_TOKEN:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      MAX_SECONDS: ${MAX_SECONDS:-120}
+      MAX_CONCURRENT: ${MAX_CONCURRENT:-2}
+    # No published ports: only reachable from the Docker network, not the internet.
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true

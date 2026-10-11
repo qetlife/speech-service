@@ -1,0 +1,53 @@
+name: Tests
+
+# Runs on GitHub-hosted runners only (never on the Pi's self-hosted runner),
+# so running it for pull requests from anyone is safe.
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  VOSK_MODEL: vosk-model-small-en-us-0.15
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # same as the Dockerfile
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install ffmpeg
+        run: ffmpeg -version > /dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Cache the Vosk model
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: ${{ env.VOSK_MODEL }}
+
+      - name: Download the Vosk model
+        run: |
+          if [ ! -d "models/$VOSK_MODEL" ]; then
+            mkdir -p models
+            curl -sSfL "https://alphacephei.com/vosk/models/$VOSK_MODEL.zip" -o /tmp/model.zip
+            unzip -q /tmp/model.zip -d models
+          fi
+
+      - name: Check for undefined names and unused imports
+        run: python -m pyflakes *.py tests
+
+      - name: Run tests
+        env:
+          MODEL_PATH: models/${{ env.VOSK_MODEL }}
+        run: python -m pytest -q
