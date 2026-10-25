@@ -17,6 +17,15 @@ url = 'https://alphacephei.com/vosk/models/${VOSK_MODEL}.zip'; \
 zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url).read())).extractall('/models')"
 ENV MODEL_PATH=/models/${VOSK_MODEL}
 
+# Piper voice for /speak (the .onnx and its .onnx.json), also cached until PIPER_VOICE changes.
+# Voices: https://huggingface.co/rhasspy/piper-voices (name: <lang>_<REGION>-<name>-<quality>)
+ARG PIPER_VOICE=en_US-lessac-medium
+RUN mkdir -p /voices && python -c "import urllib.request; \
+lang, name, quality = '${PIPER_VOICE}'.split('-'); \
+base = f'https://huggingface.co/rhasspy/piper-voices/resolve/main/{lang[:2]}/{lang}/{name}/{quality}/${PIPER_VOICE}'; \
+[urllib.request.urlretrieve(base + ext, '/voices/${PIPER_VOICE}' + ext) for ext in ('.onnx', '.onnx.json')]"
+ENV VOICE_PATH=/voices/${PIPER_VOICE}.onnx
+
 WORKDIR /app
 
 COPY requirements.txt .
