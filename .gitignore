@@ -219,5 +219,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Vosk models (downloaded, far too big for git)
+# Vosk models and Piper voices (downloaded, far too big for git)
 models/
+voices/

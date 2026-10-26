@@ -11,6 +11,7 @@ permissions:
 
 env:
   VOSK_MODEL: vosk-model-small-en-us-0.15
+  PIPER_VOICE: en_US-lessac-medium
 
 jobs:
   pytest:
@@ -44,10 +45,26 @@ jobs:
             unzip -q /tmp/model.zip -d models
           fi
 
+      - name: Cache the Piper voice
+        uses: actions/cache@v6
+        with:
+          path: voices
+          key: ${{ env.PIPER_VOICE }}
+
+      - name: Download the Piper voice
+        run: |
+          if [ ! -f "voices/$PIPER_VOICE.onnx" ]; then
+            mkdir -p voices
+            base="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/$PIPER_VOICE"
+            curl -sSfL "$base.onnx" -o "voices/$PIPER_VOICE.onnx"
+            curl -sSfL "$base.onnx.json" -o "voices/$PIPER_VOICE.onnx.json"
+          fi
+
       - name: Check for undefined names and unused imports
         run: python -m pyflakes *.py tests
 
       - name: Run tests
         env:
           MODEL_PATH: models/${{ env.VOSK_MODEL }}
+          VOICE_PATH: voices/${{ env.PIPER_VOICE }}.onnx
         run: python -m pytest -q

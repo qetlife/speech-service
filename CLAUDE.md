@@ -1,12 +1,13 @@
 # speech-service
 
-Offline speech-to-text HTTP service (FastAPI + Vosk + ffmpeg) for projects on
-the Raspberry Pi. See `README.md`.
+Offline speech-to-text and text-to-speech HTTP service (FastAPI + Vosk +
+Piper + ffmpeg) for projects on the Raspberry Pi. See `README.md`.
 
 ## Rules
 
 - **The API is a contract**: `POST /transcribe` (raw audio body) → `{"text",
-  "duration", "model"}` and `GET /health`. Other projects depend on it; add
+  "duration", "model"}`, `POST /speak` (`{"text", "format"}`) → audio, and
+  `GET /health`. Other projects depend on it; add
   fields, never rename or remove them.
 - **Keep docs up to date in the same change**: `README.md` (API, configuration,
   deployment).
